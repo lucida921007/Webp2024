@@ -1,0 +1,160 @@
+<html>
+<body>
+  <body>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0;">景點觀光展覽資訊</h1>
+        <input type="text" id="Str" placeholder="請輸入關鍵字" onchange="SearchData(this.id)" style="height: 40px;">
+    </div>
+    <table id="hw1" class="table table-striped table-hover">
+      <tr>
+        <th>名稱</th>
+        <th>地點</th>
+        <th>票價</th>
+      </tr>
+    </table>
+<div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px;">
+  <button onclick = "PreData()">上一頁</button>
+<p id = "Page" tabindex = "0" class = "clockquote text-nowrap inkine-display"></p>
+<button onclick = "NextData()">下一頁</button>
+</div>
+<style>
+table { 
+  font-family: Arial, Helvetica, sans-serif; 
+  border-collapse: collapse; 
+  width: 100%; 
+} 
+td, th { 
+  border: 1px solid #ddd; 
+  padding: 6px; 
+} 
+tr:nth-child(even){background-color: #f2f2f2;} 
+tr:hover {background-color: #ddd;} 
+th { 
+  padding-top: 12px; 
+  padding-bottom: 12px; 
+  text-align: left; 
+  background-color: #04AA6D; 
+  color: white; 
+} 
+.inline-display {
+        display: inline-block; 
+        margin-right: 10px; 
+        }
+</style>
+<script>
+var openUrl = "https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=6";
+var xhr = new XMLHttpRequest();
+xhr.open('GET', openUrl, true);
+xhr.send();
+xhr.onreadystatechange = function() {
+  if (xhr.readyState == 4 && xhr.status == 200) {
+    window.dataset = JSON.parse(xhr.responseText);
+    addNewData();
+  }
+};
+
+var currentPage = 1;
+var pageSize = 10;
+var filteredData = [];
+
+function addNewData() {
+  var mytable = document.getElementById("hw1");
+  var Header = mytable.rows[0];
+  mytable.innerHTML = '';
+  mytable.appendChild(Header);
+    
+  var start_index = (currentPage - 1) * pageSize;
+  var end_index = Math.min(start_index + pageSize, window.dataset.length);
+    
+  for (var i = start_index; i < end_index; i++) {
+     var data = window.dataset[i];
+     var row = mytable.insertRow(-1); 
+     row.insertCell(0).innerHTML = data['title']; 
+     row.insertCell(1).innerHTML = data['showInfo'][0]['location'];
+     row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
+  }
+    
+  ShowPage();
+}
+
+function addSearchData() {
+  var mytable = document.getElementById("hw1");
+  var Header = mytable.rows[0];
+  mytable.innerHTML = '';
+  mytable.appendChild(Header);
+    
+  var start_index = (currentPage - 1) * pageSize;
+  var end_index = Math.min(start_index + pageSize, filteredData.length);
+    
+  for (var i = start_index; i < end_index; i++) {
+    var data = filteredData[i];
+    var row = mytable.insertRow(-1); 
+    row.insertCell(0).innerHTML = data['title']; 
+    row.insertCell(1).innerHTML = data['showInfo'][0]['location'];
+    row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
+  } 
+  ShowPage();
+}
+
+function PreData() {
+  if (currentPage > 1) {
+    currentPage--;
+    if (document.getElementById("Str").value === '') {
+      addNewData();
+    }
+    else {
+      addSearchData();
+    }
+  }
+}
+
+function NextData() {
+  if (currentPage < Math.ceil(window.dataset.length / pageSize)) {
+    currentPage++;
+    if (document.getElementById("Str").value === '') {
+      addNewData();
+    } 
+    else {
+      addSearchData();
+    }
+  }
+}
+
+function ShowPage() {
+  var number = document.getElementById('Page');
+    if (document.getElementById("Str").value === '') {
+      number.innerHTML = currentPage + "/" + Math.ceil(window.dataset.length / pageSize) + "頁";
+    } else {
+      number.innerHTML = currentPage + "/" + Math.ceil(filteredData.length / pageSize) + "頁";
+    }
+}
+
+
+function SearchData() {
+  var keyword = document.getElementById("Str").value.trim();
+  if (keyword === '') {
+    addNewData();
+    return;
+  }
+    
+  filteredData = window.dataset.filter(function(data) {
+    var title = data['title'].toLowerCase();
+    
+    var description="";
+    if (data['descriptionFilterHtml']) {
+      description = data['descriptionFilterHtml'].toLowerCase(); //如果存在，則轉換成小寫
+    }
+    return title.includes(keyword.toLowerCase()) || description.includes(keyword.toLowerCase());
+    
+  });
+    
+  currentPage = 1;
+  addSearchData();
+}
+
+document.getElementById("Str").addEventListener("input", function() {
+    SearchData();
+});
+</script>
+</body>
+</html>
